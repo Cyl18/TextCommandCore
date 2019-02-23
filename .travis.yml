@@ -7,4 +7,4 @@ install:
 
 script:
   - dotnet build
-  - dotnet test MTAServiceStatus.Tests/MTAServiceStatus.Tests.csproj
+  - dotnet test TextCommandCore.Tests\TextCommandCore.Tests.csproj
