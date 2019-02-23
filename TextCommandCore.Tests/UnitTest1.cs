@@ -12,23 +12,28 @@ namespace TextCommandCore.Tests
         [TestMethod]
         public void TestMethod1()
         {
-            var handler = new CommandHandler1();
-            var sender = "debug";
-            handler.ProcessCommandInput(sender, "Hello");
-            handler.ProcessCommandInput(sender, "Nothing");
-            handler.ProcessCommandInput(sender, "Nothing 1");
-            handler.ProcessCommandInput(sender, "Echo");
-            handler.ProcessCommandInput(sender, "Echo 1");
-            handler.ProcessCommandInput(sender, "E 1");
-            handler.ProcessCommandInput(sender, "Fork");
-            handler.ProcessCommandInput(sender, "Fork 123");
-            handler.ProcessCommandInput(sender, "Fork 人");
-            handler.ProcessCommandInput(sender, "Fork2 2.02");
-            handler.ProcessCommandInput(sender, "Fork2 ...1");
-            handler.ProcessCommandInput(sender, "Fork3 1");
-            handler.ProcessCommandInput(sender, "Combine 1 1 1");
-            handler.ProcessCommandInput(sender, "Exception");
-            handler.ProcessCommandInput(sender, "DefinitionError 1");
+            ProcessCommandInput("Hello");
+            ProcessCommandInput("Nothing");
+            ProcessCommandInput("Nothing 1");
+            ProcessCommandInput("Echo");
+            ProcessCommandInput("Echo 1");
+            ProcessCommandInput("E 1");
+            ProcessCommandInput("Fork");
+            ProcessCommandInput("Fork 123");
+            ProcessCommandInput("Fork 人");
+            ProcessCommandInput("Fork2 2.02");
+            ProcessCommandInput("Fork2 ...1");
+            ProcessCommandInput("Fork3 1");
+            ProcessCommandInput("Combine 1 1 1");
+            ProcessCommandInput("Exception");
+            ProcessCommandInput("DefinitionError 1");
+
+            void ProcessCommandInput(string message)
+            {
+                var sender = "debug";
+                var handler = new CommandHandler1(sender, message);
+                handler.ProcessCommandInput();
+            }
         }
 
         [TestMethod]
@@ -43,17 +48,27 @@ namespace TextCommandCore.Tests
     [AttributeUsage(AttributeTargets.All)]
     public class TestPreProcessor : Attribute, IPreProcessor
     {
-        public string Process<T>(MethodInfo message, string s, ICommandHandlerCollection<T> handlers) where T : ICommandHandlerCollection<T>
+        public string Process<T>(MethodInfo message, string s, ICommandHandler<T> handlers) where T : ICommandHandler<T>
         {
 
             return s;
         }
     }
 
-    public class CommandHandler1 : ICommandHandlerCollection<CommandHandler1>
+    public class CommandHandler1 : ICommandHandler<CommandHandler1>
     {
+        public CommandHandler1(string sender, string message)
+        {
+            Sender = sender;
+            Message = message;
+        }
+
         public Action<TargetID, Message> MessageSender { get; } = (id, message) => Debug.WriteLine($"{id.ID}: {message.Content}");
         public Action<Message> ErrorMessageSender => msg => Debug.WriteLine($"Exception {msg.Content}");
+
+        public string Sender { get; }
+
+        public string Message { get; }
 
         void Hello()
         {

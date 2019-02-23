@@ -9,7 +9,7 @@ namespace TextCommandCore
 {
     public static class CommandHandlerHelper
     {
-        private static ConcurrentDictionary<Type, CommandInfo[]> commandInfoDic = new ConcurrentDictionary<Type, CommandInfo[]>();
+        private static readonly ConcurrentDictionary<Type, CommandInfo[]> commandInfoDic = new ConcurrentDictionary<Type, CommandInfo[]>();
         public static void InitCommandHandlerCollection<T>()
         {
             var type = typeof(T);
@@ -30,8 +30,10 @@ namespace TextCommandCore
             return commandInfoDic[type];
         }
 
-        public static (bool matched, string result) ProcessCommandInput<T>(this ICommandHandlerCollection<T> handlers, string sender, string message) where T : ICommandHandlerCollection<T>
+        public static (bool matched, string result) ProcessCommandInput<T>(this ICommandHandler<T> handlers) where T : ICommandHandler<T>
         {
+            var message = handlers.Message;
+            var sender = handlers.Sender;
             if (string.IsNullOrWhiteSpace(message)) return (false, null);
 
             message = message.Trim();
@@ -57,7 +59,7 @@ namespace TextCommandCore
             }
             catch (TargetInvocationException e)
             {
-                result = $"很抱歉, 你遇到了这个问题: {e.InnerException?.Message}. 这本不应发生, 你可以联系项目负责人来协助解决这个问题";
+                result = $"很抱歉, 你遇到了这个问题: {e.InnerException?.Message}.";
                 handlers.ErrorMessageSender($"在处理来自 [{sender}] 的命令时发生问题.\r\n" +
                                                             $"命令内容为 [{message}].\r\n" +
                                                             $"异常信息:\r\n" +
@@ -73,13 +75,13 @@ namespace TextCommandCore
             return (true, result);
         }
 
-        private static string PreProcess<T>(MethodInfo method, string message, ICommandHandlerCollection<T> handlers) where T : ICommandHandlerCollection<T>
+        private static string PreProcess<T>(MethodInfo method, string message, ICommandHandler<T> handlers) where T : ICommandHandler<T>
         {
             return method.GetCustomAttributes().OfType<IPreProcessor>().Aggregate(message, (current, preProcessor) => preProcessor.Process(method, current, handlers));
         }
 
         private static string PostProcess<T>(MethodInfo method, string message, string result,
-            ICommandHandlerCollection<T> handlers) where T : ICommandHandlerCollection<T>
+            ICommandHandler<T> handlers) where T : ICommandHandler<T>
         {
             return method.GetCustomAttributes().OfType<IPostProcessor>().Aggregate(message, (current, preProcessor) => preProcessor.Process(method, current, result, handlers));
         }
@@ -127,6 +129,7 @@ namespace TextCommandCore
         {
             var queue = new Queue<string>(providedParams);
             if (requiredParams.Any(p => p.HasDefaultValue)) throw new Exception("定义真牛逼.");
+
             providedParams = new string[requiredParams.Length];
             for (var i = 0; i < requiredParams.Length - 1; i++)
             {

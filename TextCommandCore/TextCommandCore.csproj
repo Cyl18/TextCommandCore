@@ -8,4 +8,8 @@
     <PackageReference Include="GammaLibrary" Version="1.1.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Customization\" />
+  </ItemGroup>
+
 </Project>

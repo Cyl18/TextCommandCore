@@ -9,10 +9,12 @@ using System.Threading.Tasks;
 
 namespace TextCommandCore
 {
-    public interface ICommandHandlerCollection<T> where T : ICommandHandlerCollection<T>
+    public interface ICommandHandler<T> where T : ICommandHandler<T>
     {
         Action<TargetID, Message> MessageSender { get; }
         Action<Message> ErrorMessageSender { get; }
+        string Sender { get; }
+        string Message { get; }
     }
 
     public class CommandInfo
