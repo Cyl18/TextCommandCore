@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using GammaLibrary.Extensions;
 
 namespace TextCommandCore
 {
@@ -59,15 +60,27 @@ namespace TextCommandCore
             }
             catch (TargetInvocationException e)
             {
-                result = $"很抱歉, 你遇到了这个问题: {e.InnerException?.Message}.";
-                handlers.ErrorMessageSender($"在处理来自 [{sender}] 的命令时发生问题.\r\n" +
-                                                            $"命令内容为 [{message}].\r\n" +
-                                                            $"异常信息:\r\n" +
-                                                            $"{e.InnerException}");
+                var innerException = e.InnerException;
+                if (innerException is CommandException)
+                {
+                    result = e.Message;
+                }
+                else if (innerException is CommandMismatchException)
+                {
+                    return (false, null);
+                }
+                else
+                {
+                    result = $"很抱歉, 你遇到了这个问题: {innerException?.Message}.";
+                    handlers.ErrorMessageSender($"在处理来自 [{sender}] 的命令时发生问题.\r\n" +
+                                                                $"命令内容为 [{message}].\r\n" +
+                                                                $"异常信息:\r\n" +
+                                                                $"{innerException}");
+                }
             }
             catch (Exception e)
             {
-                result = $"TextCommandCore 核心库错误. 这在理论上不可能发生, 有可能是用这个库的人搞错了点什么, 但是谁知道呢? \r\n{e}";
+                result = $"TextCommandCore 核心库错误. 这在理论上不应该发生, 有可能是用这个库的人搞错了点什么, 但是谁知道呢? \r\n{e}";
             }
 
             if (!string.IsNullOrWhiteSpace(result))
@@ -100,9 +113,9 @@ namespace TextCommandCore
             if (providedParams.Length < minRequiredParams) throw new CommandException("参数过少");
             var delta = requiredParams.Length - providedParams.Length;
 
-            if (method.GetCustomAttribute<CombineStartAttribute>() != null)
+            if (method.IsAttributeDefined<CombineStartAttribute>())
                 providedParams = CombineStart(providedParams, requiredParams, delta);
-            if (method.GetCustomAttribute<CombineEndAttribute>() != null)
+            if (method.IsAttributeDefined<CombineEndAttribute>())
                 providedParams = CombineEnd(providedParams, requiredParams);
 
             if (providedParams.Length > maxRequiredParams) throw new CommandException("参数过多");
@@ -136,7 +149,7 @@ namespace TextCommandCore
                 providedParams[i] = queue.Dequeue();
             }
 
-            providedParams[providedParams.Length - 1] = string.Join(" ", queue);
+            providedParams[providedParams.Length - 1] = queue.Connect(" ");
             return providedParams;
         }
 
@@ -149,7 +162,7 @@ namespace TextCommandCore
                 providedParams[i] = stack.Pop();
             }
 
-            providedParams[0] = string.Join(" ", stack.Reverse());
+            providedParams[0] = stack.Reverse().Connect(" ");
             return providedParams;
         }
 
@@ -176,6 +189,14 @@ namespace TextCommandCore
             if (requiredParamParameterType == typeof(int))
             {
                 if (!int.TryParse(providedParam, out var num))
+                    throw new CommandException("您参数真牛逼. (不是数字)");
+
+                return num;
+            }
+
+            if (requiredParamParameterType == typeof(long))
+            {
+                if (!long.TryParse(providedParam, out var num))
                     throw new CommandException("您参数真牛逼. (不是数字)");
 
                 return num;
