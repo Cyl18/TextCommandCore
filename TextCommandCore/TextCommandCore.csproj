@@ -1,16 +1,26 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.0.1</Version>
+    <Version>1.5.0</Version>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Copyright>Cyl18</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GammaLibrary" Version="1.1.7" />
+    <PackageReference Include="ConfigureAwait.Fody" Version="3.0.0" />
+    <PackageReference Include="GammaLibrary" Version="1.1.9" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Customization\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

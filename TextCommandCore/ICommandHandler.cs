@@ -62,4 +62,10 @@ namespace TextCommandCore
     public sealed class CombineEndAttribute : Attribute
     {
     }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public sealed class RunInCurrentThreadAttribute : Attribute
+    {
+    }
+    //TODO Timer' 请求比预计时间长
 }
