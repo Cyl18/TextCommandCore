@@ -17,6 +17,18 @@ namespace TextCommandCore
         string Message { get; }
     }
 
+    public abstract class CommandHandlerBase<T> : ICommandHandler<T> where T : ICommandHandler<T>
+    {
+        public abstract Action<TargetID, Message> MessageSender { get; }
+        public abstract Action<Message> ErrorMessageSender { get; }
+        public abstract string Sender { get; }
+        public abstract string Message { get; }
+
+        public virtual void OnProcessingMessage() { }
+
+        public virtual void OnProcessedMessage() { }
+    }
+
     public class CommandInfo
     {
         public Predicate<string> Matcher { get; }
@@ -64,7 +76,7 @@ namespace TextCommandCore
     }
 
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class RunInCurrentThreadAttribute : Attribute
+    public sealed class DoNotMeasureTimeAttribute : Attribute
     {
     }
     //TODO Timer' 请求比预计时间长

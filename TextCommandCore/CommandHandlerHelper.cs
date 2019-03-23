@@ -14,6 +14,7 @@ namespace TextCommandCore
     public static class CommandHandlerHelper
     {
         static readonly ConcurrentDictionary<Type, CommandInfo[]> CommandInfosCache = new ConcurrentDictionary<Type, CommandInfo[]>();
+        public static TimeSpan CommandExpectedTime = TimeSpan.FromSeconds(7);
 
         public static void InitCommandHandlerCollection<T>()
         {
@@ -51,14 +52,14 @@ namespace TextCommandCore
 
                 var param = BuildParams(message, method);
 
-                if (method.IsAttributeDefined<RunInCurrentThreadAttribute>())
+                if (method.IsAttributeDefined<DoNotMeasureTimeAttribute>())
                 {
                     result = method.Invoke(handlers, param) as string;
                 }
                 else
                 {
                     var task = Task.Run(() => method.Invoke(handlers, param) as string);
-                    if (!task.Wait(TimeSpan.FromSeconds(7)))
+                    if (!task.Wait(CommandExpectedTime))
                         handlers.MessageSender(sender, "很抱歉, 这个命令可能需要更长的时间来执行. 请耐心等待.");
 
                     result = task.Result;
@@ -73,6 +74,26 @@ namespace TextCommandCore
             catch (CommandException e)
             {
                 result = e.Message;
+            }
+            catch (AggregateException e)
+            {
+                var innerException = e.InnerExceptions.FirstOrDefault();
+                
+                switch (innerException)
+                {
+                    case CommandException _:
+                        result = e.Message;
+                        break;
+                    case CommandMismatchException _:
+                        return (false, null);
+                    default:
+                        result = $"很抱歉, 你遇到了这个问题: {innerException?.Message}.";
+                        handlers.ErrorMessageSender($"在处理来自 [{sender}] 的命令时发生问题.\r\n" +
+                                                    $"命令内容为 [{message}].\r\n" +
+                                                    $"异常信息:\r\n" +
+                                                    $"{innerException}");
+                        break;
+                }
             }
             catch (TargetInvocationException e)
             {
@@ -105,12 +126,18 @@ namespace TextCommandCore
 
         static string PreProcess<T>(MethodInfo method, string message, ICommandHandler<T> handlers) where T : ICommandHandler<T>
         {
-            return method.GetCustomAttributes().OfType<IPreProcessor>().Aggregate(message, (current, preProcessor) => preProcessor.Process(method, current, handlers));
+            var result = method.GetCustomAttributes().OfType<IPreProcessor>().Aggregate(message,
+                (current, preProcessor) => preProcessor.Process(method, current, handlers));
+            if (handlers is CommandHandlerBase<T> handler) handler.OnProcessingMessage();
+
+            return result;
         }
 
         static string PostProcess<T>(MethodInfo method, string message, string result,
             ICommandHandler<T> handlers) where T : ICommandHandler<T>
         {
+            if (handlers is CommandHandlerBase<T> handler) handler.OnProcessedMessage();
+
             return method.GetCustomAttributes().OfType<IPostProcessor>().Aggregate(result, (current, processor) => processor.Process(method, message, current, handlers));
         }
 
