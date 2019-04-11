@@ -77,7 +77,7 @@ namespace TextCommandCore
             }
             catch (AggregateException e)
             {
-                var innerException = e.InnerExceptions.FirstOrDefault();
+                var innerException = (e.InnerExceptions.FirstOrDefault() as TargetInvocationException)?.InnerException;
                 
                 switch (innerException)
                 {
@@ -95,7 +95,7 @@ namespace TextCommandCore
                         break;
                 }
             }
-            catch (TargetInvocationException e)
+            /*catch (TargetInvocationException e)
             {
                 var innerException = e.InnerException;
                 switch (innerException)
@@ -113,7 +113,7 @@ namespace TextCommandCore
                                                     $"{innerException}");
                         break;
                 }
-            }
+            }*/
             catch (Exception e)
             {
                 result = $"TextCommandCore 核心库错误. 这在理论上不应该发生, 有可能是用这个库的人搞错了点什么, 但是谁知道呢? \r\n{e}";

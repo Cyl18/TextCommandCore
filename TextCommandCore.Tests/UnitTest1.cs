@@ -32,6 +32,7 @@ namespace TextCommandCore.Tests
             {
                 var sender = "debug";
                 var handler = new CommandHandler1(sender, message);
+
                 handler.ProcessCommandInput();
             }
         }
@@ -63,8 +64,8 @@ namespace TextCommandCore.Tests
             Message = message;
         }
 
-        public Action<TargetID, Message> MessageSender { get; } = (id, message) => Debug.WriteLine($"{id.ID}: {message.Content}");
-        public Action<Message> ErrorMessageSender => msg => Debug.WriteLine($"Exception {msg.Content}");
+        public Action<TargetID, Message> MessageSender { get; } = (id, message) => Trace.WriteLine($"{id.ID}: {message.Content}");
+        public Action<Message> ErrorMessageSender => msg => Trace.WriteLine($"Exception {msg.Content}");
 
         public string Sender { get; }
 
