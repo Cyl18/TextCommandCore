@@ -24,16 +24,17 @@ namespace TextCommandCore.Tests
             ProcessCommandInput("Fork2 2.02");
             ProcessCommandInput("Fork2 ...1");
             ProcessCommandInput("Fork3 1");
-            ProcessCommandInput("Combine 1 1 1");
             ProcessCommandInput("Exception");
             ProcessCommandInput("DefinitionError 1");
+            ProcessCommandInput("Combine 1 1 1");
+            ProcessCommandInput("Combine");
 
             void ProcessCommandInput(string message)
             {
                 var sender = "debug";
                 var handler = new CommandHandler1(sender, message);
 
-                handler.ProcessCommandInput();
+                var (matched, result) = handler.ProcessCommandInput();
             }
         }
 

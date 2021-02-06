@@ -40,9 +40,7 @@ namespace TextCommandCore
         {
             var message = handlers.Message;
             var sender = handlers.Sender;
-            if (message.IsNullOrWhiteSpace()) return (false, null);
-
-            message = message.Trim();
+            if (message.IsNullOrEmpty()) return (false, null);
 
             string result;
             try
@@ -78,7 +76,7 @@ namespace TextCommandCore
             catch (AggregateException e)
             {
                 var innerException = (e.InnerExceptions.FirstOrDefault() as TargetInvocationException)?.InnerException;
-                
+
                 switch (innerException)
                 {
                     case CommandException _:
@@ -143,7 +141,7 @@ namespace TextCommandCore
 
         static object[] BuildParams(string message, MethodInfo method)
         {
-            if (method.IsAttributeDefined<CombineParamsAttribute>()) return GetCombinedParams(message);
+            if (method.IsAttributeDefined<CombineParamsAttribute>()) return GetCombinedParams(message, method);
 
             var requiredParams = method.GetParameters();
             var providedParams = message.Split(' ').Skip(1).ToArray();
@@ -208,9 +206,20 @@ namespace TextCommandCore
             return providedParams;
         }
 
-        static object[] GetCombinedParams(string message)
+        static object[] GetCombinedParams(string message, MethodInfo method)
         {
-            return new object[] { message.Substring(message.IndexOf(' ') + 1) };
+            var parameters = method.GetParameters();
+            if (parameters.Length != 1) throw new Exception("使用 CombinedParams 时的参数数量只能有一个, 且必须为 string 类型.");
+            var param = parameters[0];
+
+            var result = message.Split(' ').Skip(1).Connect(" ");
+            if (!result.IsNullOrEmpty())
+                return ((object) result).AsArray();
+            
+            if (param.HasDefaultValue)
+                return param.DefaultValue.AsArray();
+
+            throw new CommandException("参数过少");
         }
 
         static object GetParam(string providedParam, Type requiredParamParameterType)
